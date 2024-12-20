@@ -1,0 +1,124 @@
+mixed-port: 7890
+tproxy-port: 9898
+redir-port: 9797
+allow-lan: true
+bind-address: "*"
+mode: rule
+log-level: debug
+ipv6: false
+geodata-loader: standard
+keep-alive-interval: 30
+global-client-fingerprint: firefox
+find-process-mode: strict
+external-controller: 127.0.0.1:9090
+external-ui: ./dashboard
+
+geodata-mode: true
+geo-auto-update: true
+geo-update-interval: 24
+geox-url:
+  geoip: "https://fan.212124.xyz/https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.dat"
+  geosite: "https://fan.212124.xyz/https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat"
+  mmdb: "https://fan.212124.xyz/https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geoip.metadb"
+  asn: "https://fan.212124.xyz/https://github.com/xishang0128/geoip/releases/download/latest/GeoLite2-ASN.mmdb"
+
+dns:
+  enable: true
+  ipv6: false
+  listen: 0.0.0.0:1053
+  enhanced-mode: fake-ip
+  fake-ip-range: 28.0.0.1/8
+  default-nameserver:
+    - 119.29.29.29
+  nameserver:
+    - https://doh.pub/dns-query
+    - https://dns.alidns.com/dns-query
+
+##============================================================================================
+iting: &iting
+  type: http
+  server: 14.146.228.46
+  port: 9443
+  udp: false
+  skip-cert-verify: true
+
+proxy-providers:
+
+  out1:
+    type: http
+    url: https://cfvless.cacoman.us.kg/0d5a1268-bd29-47e7-a8d4-1b33738a79b4
+    path: ./proxy_providers/out1.yaml
+    override:
+      dialer-proxy: 🚀 国内节点
+    health-check:
+      enable: true
+      interval: 7200
+      url: https://www.cloudflare.com
+
+proxies:
+  - name: "dns-out"
+    type: dns
+
+  - name: 云机🍅
+    type: socks5
+    server: 36.155.110.184
+    port: 10167
+    username: 1212
+    password: 1212
+    dialer-proxy: 🚀 国内节点
+
+  - name: 🇨🇳 爱听10.16
+    headers:
+      Proxy-Connection: keep-alive
+      Proxy-Authorization: U1BJRD03Nzc3JlVSTD0xMDEuMzUuODIuMjIwOjQ0MyZVSUQ9MTg5NDkyNjQ0MzQmVElNRVNUQU1QPTE3MjkwNTkwMDQmVE9LRU49NmIyMWUxYTViMWIwYTM1NjBhMGQ5NDJmNDg3NGMzOWQ=
+    <<: *iting
+
+  - name: TC广州游戏4M
+    server: 42.194.234.163
+    port: 20034
+    type: vmess
+    uuid: 96f9af08-e50e-41fe-a783-3f56b7625d2a
+    alterId: 0
+    cipher: auto
+    udp: true
+    network: ws
+    ws-opts:
+      path: /
+      headers:
+        Host: ltetp.tv189.com
+
+proxy-groups:
+  - name: 🌎 全球节点
+    type: select
+    proxies:
+      - 🚀 国内节点
+      - 云机🍅
+    exclude-filter: "(?i)channel|undefined|t.me"
+
+  - name: 🚀 国内节点
+    type: select
+    proxies:
+      - 🎮 UDP策略
+      - 🇨🇳 爱听10.16
+
+  - name: 🎮 UDP策略
+    type: select
+    proxies:
+      - TC广州游戏4M
+      - REJECT
+      - DIRECT
+
+rules:
+# DNS 劫持 
+  - DST-PORT,53,dns-out
+# UDP 规则 
+  - NETWORK,UDP,🎮 UDP策略
+# 广告过滤
+  - geosite,category-ads-all,REJECT
+# 蓝奏云规则
+  - DST-PORT,446,🌎 全球节点
+# 国内外分流规则
+  - GEOSITE,CN,🚀 国内节点
+  - GEOIP,CN,🚀 国内节点
+# 兜底规则
+  - MATCH,🌎 全球节点
